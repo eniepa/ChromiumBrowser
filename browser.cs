@@ -21,14 +21,114 @@ namespace ChromiumBrowser
         {
             InitializeComponent();
             InitializeBrowser();
+            InitializeForm();
+        }
+
+        private void InitializeForm()
+        {
+            BrowserTabs.Height = ClientRectangle.Height - 25;
         }
 
         private void InitializeBrowser()
         {
             Cef.Initialize(new CefSettings());
-            browser = new ChromiumWebBrowser("https://datorium.eu");
+
+            BrowserTabs.TabPages[0].Dispose();
+            // BrowserTabs.TabPages[0].Dispose();
+            AddBrowserTab();
+        }
+
+        private void toolStripButtonGo_Click(object sender, EventArgs e)
+        {
+            Navigate(toolStripAddressBar.Text);
+        }
+
+        private void toolStripButtonBack_Click(object sender, EventArgs e)
+        {
+            browser.Back();
+        }
+
+        private void toolStripButtonForward_Click(object sender, EventArgs e)
+        {
+            browser.Forward();
+        }
+
+        private void toolStripButtonReload_Click(object sender, EventArgs e)
+        {
+            browser.Reload();
+        }
+
+        private void toolStripAddressBar_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                Navigate(toolStripAddressBar.Text);
+            }
+        }
+
+        private void Browser_AddressChanged(object sender, AddressChangedEventArgs e)
+        {
+            // var selectedBrowser = (ChromiumWebBrowser)sender;
+
+            this.Invoke(new MethodInvoker(() =>
+            {
+                toolStripAddressBar.Text = e.Address;
+            }));
+        }
+
+        private void Browser_TitleChanged(object sender, TitleChangedEventArgs e)
+        {
+            var selectedBrowser = (ChromiumWebBrowser)sender;
+            this.Invoke(new MethodInvoker(() =>
+            {
+                selectedBrowser.Parent.Text = e.Title;
+            }));
+        }
+
+        private void Navigate(string address)
+        {
+            try
+            {
+                var selectedBrowser = (ChromiumWebBrowser)BrowserTabs.SelectedTab.Controls[0];
+                selectedBrowser.Load(address);
+            }
+            catch { }
+        }
+
+        private void toolStripButtonAddTab_Click(object sender, EventArgs e)
+        {
+            AddBrowserTab();
+            // select the latest tab
+            BrowserTabs.SelectedTab = BrowserTabs.TabPages[BrowserTabs.TabPages.Count - 2];
+        }
+
+        private void AddBrowserTab()
+        {
+            //adding tab 
+            var newTabPage = new TabPage();
+            newTabPage.Text = "New Tab";
+            //  BrowserTabs.TabPages.Add(newTabPage);
+            BrowserTabs.TabPages.Insert(BrowserTabs.TabPages.Count - 1, newTabPage);
+
+            //adding browser
+            browser = new ChromiumWebBrowser("https://google.com");
             browser.Dock = DockStyle.Fill;
-            this.Controls.Add(browser);
-        } 
+
+            browser.AddressChanged += Browser_AddressChanged;
+            browser.TitleChanged += Browser_TitleChanged;
+
+            newTabPage.Controls.Add(browser);
+        }
+
+        private void BrowserTabs_Click(object sender, EventArgs e)
+        {
+            if (BrowserTabs.SelectedTab == BrowserTabs.TabPages[BrowserTabs.TabPages.Count - 1])
+            {
+                AddBrowserTab();
+                //select the latest browser tab
+                BrowserTabs.SelectedTab = BrowserTabs.TabPages[BrowserTabs.TabPages.Count - 2];
+            }
+        }
     }
+    
 }
